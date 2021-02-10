@@ -11,13 +11,13 @@ baseurl: ''
 lang: en-US
 
 # Change to your timezone › http://www.timezoneconverter.com/cgi-bin/findzone/findzone
-timezone: Asia/Shanghai
+timezone: Asia/Jerusalem
 
 # jekyll-seo-tag settings › https://github.com/jekyll/jekyll-seo-tag/blob/master/docs/usage.md
 # --------------------------
-title: Chirpy                          # the main title
+title: Ilan Kalendarov                          # the main title
 
-tagline: A text-focused Jekyll theme   # it will display as the sub-title
+tagline: A Offensive Security Blog   # it will display as the sub-title
 
 description: >-                        # used by seo meta and the atom feed
   A minimal, portfolio, sidebar,
@@ -30,18 +30,18 @@ url: 'https://ilankalendarov.github.io'
 author: Ilan Kalendarov                # change to your full name
 
 github:
-  username: github_username             # change to your github username
+  username: IlanKalendarov             # change to your github username
 
 twitter:
-  username: twitter_username            # change to your twitter username
+  username: IKalendarov            # change to your twitter username
 
 social:
-  name: your_full_name                  # it will shows as the copyright owner in Footer
-  email: example@doamin.com             # change to your email address
+  name: Ilan Kalendarov                  # it will shows as the copyright owner in Footer
+  email:              # change to your email address
   links:
     # The first element serves as the copyright owner's link
-    - https://twitter.com/username      # change to your twitter homepage
-    - https://github.com/username       # change to your github homepage
+    - https://twitter.com/IKalendarov      # change to your twitter homepage
+    - https://github.com/IlanKalendarov       # change to your github homepage
     # Uncomment below to add more social links
     # - https://www.facebook.com/username
     # - https://www.linkedin.com/in/username
