@@ -492,8 +492,8 @@ Feedback and additions or corrections are strongly encouraged. You can reach me 
 
 ## Links & Resources
 
-* Instrumeting Windows APIs With Frida - [https://www.ired.team/miscellaneous-reversing-forensics/windows-kernel-internals/instrumenting-windows-apis-with-frida]
-* RdpThief - [https://www.mdsec.co.uk/2019/11/rdpthief-extracting-clear-text-credentials-from-remote-desktop-clients/]
-* Frida [https://frida.re/]
-* Api Monitor - [http://www.rohitab.com/apimonitor]
+* Instrumeting Windows APIs With Frida - <https://www.ired.team/miscellaneous-reversing-forensics/windows-kernel-internals/instrumenting-windows-apis-with-frida>
+* RdpThief - <https://www.mdsec.co.uk/2019/11/rdpthief-extracting-clear-text-credentials-from-remote-desktop-clients/>
+* Frida <https://frida.re/>
+* Api Monitor - <http://www.rohitab.com/apimonitor>
 
