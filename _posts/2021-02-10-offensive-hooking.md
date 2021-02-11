@@ -9,17 +9,13 @@ tags: [persistence, av evasion]
 
 ## Introduction
 
-Hooking is not a new concept as we know by now, many AV/EDR vendors use this technique to monitor suspicious API calls. In this blog post we'll explorer API hooking but in the offensive point of view. We'll use API Monitor to investigate which API calls used by each program  then, using Frida and python to build our final hooking script. This post is inspired by the Red Teaming Experiments 
-
-[blog]: https://www.ired.team/miscellaneous-reversing-forensics/windows-kernel-internals/instrumenting-windows-apis-with-frida	"blog"
+Hooking is not a new concept as we know by now, many AV/EDR vendors use this technique to monitor suspicious API calls. In this blog post we'll explorer API hooking but in the offensive point of view. We'll use API Monitor to investigate which API calls used by each program  then, using Frida and python to build our final hooking script. This post is inspired by the Red Teaming Experiments [blog post.](https://www.ired.team/miscellaneous-reversing-forensics/windows-kernel-internals/instrumenting-windows-apis-with-frida )
 
 
 
 ## API Monitor
 
-Api Monitor is a great tool for .. you guest it, monitoring api calls. You can find it 
-
-[here]: http://www.rohitab.com/downloads	"here"
+Api Monitor is a great tool for .. you guest it, monitoring api calls. You can find it [here](http://www.rohitab.com/downloads).
 
 Firing up Api Monitor this will be the main screen:
 
@@ -35,9 +31,7 @@ Looks good to me as a start. So opening runas and trying to login as a different
 
 ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/RunasAPICall.png)
 
-Great so we know that `CreateProcessWithLogonW` contains our secret password. Looking at the 
-
-[msdn docs]: https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createprocesswithlogonw	"msdn docs"
+Great so we know that `CreateProcessWithLogonW` contains our secret password. Looking at the [microsoft docs](https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createprocesswithlogonw)
 
  we could see that the first and third arguments will store the username and password. Now that we have that information lets build our script!.
 
