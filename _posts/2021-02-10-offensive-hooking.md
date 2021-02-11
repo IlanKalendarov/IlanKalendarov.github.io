@@ -23,7 +23,7 @@ Api Monitor is a great tool for .. you guest it, monitoring api calls. You can f
 
 Firing up Api Monitor this will be the main screen:
 
-![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\ApiMonitorHomeScreen.png)
+![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/ApiMonitorHomeScreen.png)
 
 As you can see I've chosen all of the library's options for seeing all of the API possibilities. Let's start by monitoring a new process, I'll choose runas.exe first.
 
@@ -33,7 +33,7 @@ According to microsoft's docs:
 
 Looks good to me as a start. So opening runas and trying to login as a different user gives us the above API call:
 
-![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\RunasAPICall.png)
+![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/RunasAPICall.png)
 
 Great so we know that `CreateProcessWithLogonW` is contains our secret password. Looking at the 
 
