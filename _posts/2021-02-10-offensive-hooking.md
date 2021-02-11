@@ -154,13 +154,13 @@ Great! lets try to run the script:
 
 ## Credentials Prompt  (A.K.A Graphical Runas)
 
-![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\GraphicalRunas.png)
+![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/GraphicalRunas.png)
 
    
 
 At this point its pretty easy, Implementing the steps like we did with the CLI version of runas. Lets fire up API Monitor. Using the process locator option in API Monitor we could see that the process is actually `explorer.exe`:
 
- ![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\processLocator.png)
+ ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/processLocator.png)
 
 Using the steps like we did before I was able to find that the function `CredUnPackAuthenticationBufferW` from `Credui.dll` was called.
 
