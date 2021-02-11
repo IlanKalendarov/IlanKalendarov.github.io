@@ -365,15 +365,15 @@ Executing the script will get us the creds:
 
 Last but not least, PsExec - the great remoting tool from the sysinternals suite, This was interesting to research. Let's open API Monitor and load PsExec with the right arguments, The result is:
 
- ![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\PsExecResukt.png)
+ ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/PsExecResukt.png)
 
 `WNetAddConnection2W` is the function that contains our secret password. If we'll try to implement this we'll run into a problem, Frida won't have time to attach to the `PsExec.exe` process because we are giving the password as an argument, Let's try it: 
 
-![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\PSEXECerror.png)
+![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/PSEXECerror.png)
 
 The script was not fast enough to catch the credentials we need to find a different way. Looking at this I thought to myself, what if we hook everything that was entered inside the command prompt? Let's explore. This time I'll try to monitor the command prompt and check for our secret password:
 
-![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\CmdExplore.png)
+![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/CmdExplore.png)
 
 We can see there is a new thread under, searching for our password resulted in the `RtlInitUnicodeStringEx` function from `Ntdll.dll`. unfortunately, there are no docs available at Microsoft like most of the Ntdll library. But we can see the arguments that the function takes. The second argument - `SourceString` looks interesting, We also can see that the function is used **a lot** of times, basically every time the user gives input to the command prompt, So we need to build a filter mechanism in order to filter unwanted garbage.
 
@@ -476,6 +476,19 @@ if __name__ == "__main__":
 
 The result would be:
 
-![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\cmdResukt.png)
+![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/cmdResukt.png)
 
 Great! we were able to intercept the credentials, You can expend the script to your personal needs or even combine all of them together, I'll leave it for you to explore ;).  
+
+
+
+## Conclusion 
+
+
+
+
+
+## Credits 
+
+
+
