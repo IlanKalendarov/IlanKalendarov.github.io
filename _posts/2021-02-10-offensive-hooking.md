@@ -9,39 +9,41 @@ tags: [persistence, av evasion]
 
 ## Introduction
 
-Hooking is not a new concept as we know by now, many AV/EDR vendors use this technique to monitor suspicious API calls. In this blog post we'll explorer API hooking but in the offensive point of view. We'll use API Monitor to investigate which API calls used by each program  then, using Frida and python to build our final hooking script. This post is inspired by the Red Teaming Experiments [blog post.](https://www.ired.team/miscellaneous-reversing-forensics/windows-kernel-internals/instrumenting-windows-apis-with-frida )
+Hooking is not a new concept as we know by now, many AV/EDR vendors use this technique to monitor suspicious API calls. In this blog post we'll explore API hooking but in the offensive point of view. We'll use API Monitor to investigate which API calls used by each program then, using Frida and python to build our final hooking script. This post is inspired by the Red Teaming Experiments [blog post.](https://www.ired.team/miscellaneous-reversing-forensics/windows-kernel-internals/instrumenting-windows-apis-with-frida )
 
 
 
 ## API Monitor
 
-Api Monitor is a great tool for .. you guest it, monitoring api calls. You can find it [here](http://www.rohitab.com/downloads).
+Api Monitor is a great tool for... you guest it, monitoring api calls. You can find it [here](http://www.rohitab.com/downloads).
 
 Firing up Api Monitor this will be the main screen:
 
 ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/ApiMonitorHomeScreen.png)
 
-As you can see I've chosen all of the library's options for seeing all of the API possibilities. Let's start by monitoring a new process, I'll choose runas.exe first.
+As you can see I've chosen all libraries options therefore, I would able to catch most of the API possibilities. Let's start by monitoring a new process, I'll choose `runas.exe` first.
 
 According to Microsoft docs:
 
 > It allows a user to run specific tools and programs with different permissions than the user's current logon provides.
 
-Looks good to me as a start. So opening runas and trying to login as a different user gives us the above API call:
+Looks good to me as a start. 
+
+Opening runas and trying to login as a different user gives us the above API call:
 
 ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/RunasAPICall.png)
 
-Great so we know that `CreateProcessWithLogonW` api call contains our secret password. Looking at the [microsoft docs](https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createprocesswithlogonw)
+Great so we know that `CreateProcessWithLogonW` api call contains our secret password. Looking at the [microsoft docs ](https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createprocesswithlogonw) we could see that the first and third arguments will store the username and password. Now that we have that information lets build our script!.
 
- we could see that the first and third arguments will store the username and password. Now that we have that information lets build our script !.
 
-# Frida
+
+## Frida
 
 According to Frida's site:
 
 > It’s [Greasemonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) for native apps, or, put in more technical terms, it’s a dynamic code instrumentation toolkit. It lets you inject snippets of JavaScript or your own library into native apps on Windows, macOS, GNU/Linux, iOS, Android, and QNX. Frida also provides you with some simple tools built on top of the Frida API. These can be used as-is, tweaked to your needs, or serve as examples of how to use the API.
 
-We'll be able to build a JavaScript snippet that takes the function name from the DLL library - `Advapi.dll`. The script should look like that:
+We'll be able to build a JavaScript snippet that takes the function name from the DLL library - `Advapi.dll`. The script should look like this:
 
 ```javascript
 var CreateProcessWithLogonW = Module.findExportByName("Advapi32.dll", 'CreateProcessWithLogonW') // exporting the function from the dll library
@@ -60,7 +62,7 @@ Interceptor.attach(CreateProcessWithLogonW, { // getting our juice arguments (ac
 });
 ```
 
-Now, all left to do is to insert the JavaScript snippet to a python script, The final python script should look like that:
+Now, all left to do is to insert the JavaScript snippet to a python script, The final python script should look like this:
 
 ```python
 # Wrriten by Ilan Kalendarov
@@ -144,6 +146,6 @@ if __name__ == "__main__":
 	thread.start()
 ```
 
-Great ! lets try to run the script:
+Great! lets try to run the script:
 
 ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/RunasScript.png)
