@@ -9,11 +9,15 @@ tags: [persistence, av evasion]
 
 ## Introduction
 
+------
+
 Hooking is not a new concept as we know by now, many AV/EDR vendors use this technique to monitor suspicious API calls. In this blog post, we'll explore API hooking but from the offensive point of view. We'll use API Monitor to investigate which API calls used by each program then, using Frida and python to build our final hooking script. This post is inspired by the Red Teaming Experiments [blog post.](https://www.ired.team/miscellaneous-reversing-forensics/windows-kernel-internals/instrumenting-windows-apis-with-frida )
 
 
 
 ## API Monitor
+
+------
 
 Api Monitor is a great tool for... you guessed it, monitoring api calls. You can find it [here](http://www.rohitab.com/downloads).
 
@@ -38,6 +42,8 @@ Great so we know that the `CreateProcessWithLogonW` api call contains our secret
 
 
 ## Frida
+
+------
 
 According to Frida's site:
 
@@ -154,6 +160,8 @@ Great! lets try to run the script:
 
 ## Credentials Prompt  (A.K.A Graphical Runas)
 
+------
+
 ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/GraphicalRunas.png)
 
    
@@ -236,6 +244,8 @@ if __name__ == "__main__":
 
 
 ## RDP 
+
+------
 
 Reading the MDSec [blog post](https://www.mdsec.co.uk/2019/11/rdpthief-extracting-clear-text-credentials-from-remote-desktop-clients/) and Red Teaming Experiments [blog](https://www.ired.team/offensive-security/code-injection-process-injection/api-monitoring-and-hooking-for-offensive-tooling) I thought to myself, there's must be a simple way to hook RDP credentials.
 
@@ -351,4 +361,12 @@ Executing the script will get us the creds:
 
 ## PsExec
 
-Last but not least, PsExec - the great remoting tool from the sysinternals suite, This was really interesting to research 
+------
+
+Last but not least, PsExec - the great remoting tool from the sysinternals suite, This was interesting to research. Let's open API Monitor and load PsExec with the right arguments, The result is:
+
+ ![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\PsExecResukt.png)
+
+`WNetAddConnection2W` is the function that contains our secret password. If we'll try to implement this we'll run into a problem, Frida won't have time to attach to the `PsExec.exe` process because we are giving the password as a argument, Let's try it: 
+
+![](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\PSEXECerror.png)
