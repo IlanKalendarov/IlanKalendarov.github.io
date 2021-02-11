@@ -1,7 +1,7 @@
 ---
 title: Offensive API Hooking
 author: Ilan Kalendarov
-date: 2021-02-10 14:10:00 +0800
+date: 2021-02-11 14:10:00 +0800
 categories: [Red Team]
 tags: [persistence, av evasion]
 
@@ -295,10 +295,10 @@ def WaitForRDP():
 		if ("mstsc.exe" in (p.name() for p in psutil.process_iter())) and not lockRDP.locked():
 			lockRDP.acquire() # Locking the mstsc thread
 			print("[+] Found RunAs")
-			RunAs()
+			RDP()
 			sleep(0.5)
 
-		# If the user regret and they "ctrl+c" from mstsc then release the thread lock and start over.
+		# If the user regret and they close mstsc then we will release the thread lock and start over.
 		elif (not "mstsc.exe" in (p.name() for p in psutil.process_iter())) and lockRDP.locked():
 			lockRDP.release()
 			print("[+] RDP is dead releasing lock")
@@ -306,7 +306,7 @@ def WaitForRDP():
 			pass
 		sleep(0.5)
 
-def RunAs():
+def RDP():
 	try:
 		# Attaching to the mstsc process
 		print("[+] Trying To Attach To RDP")
@@ -371,11 +371,11 @@ Last but not least, PsExec - the great remoting tool from the sysinternals suite
 
 ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/PSEXECerror.png)
 
-The script was not fast enough to catch the credentials we need to find a different way. Looking at this I thought to myself, what if we hook everything that was entered inside the command prompt? Let's explore. This time I'll try to monitor the command prompt and check for our secret password:
+The script was not fast enough to catch the credentials we need to find a different way. Looking at this I thought to myself, what if we hook everything that was entered inside the command prompt? Let's find out. This time I'll try to monitor the command prompt and check for our secret password:
 
 ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/CmdExplore.png)
 
-We can see there is a new thread under, searching for our password resulted in the `RtlInitUnicodeStringEx` function from `Ntdll.dll`. unfortunately, there are no docs available at Microsoft like most of the Ntdll library. But we can see the arguments that the function takes. The second argument - `SourceString` looks interesting, We also can see that the function is used **a lot** of times, basically every time the user gives input to the command prompt, So we need to build a filter mechanism in order to filter unwanted garbage.
+We can see there is a new thread under, Searching for our password resulted in the `RtlInitUnicodeStringEx` function from `Ntdll.dll`. unfortunately, there are no docs available at Microsoft like most of the Ntdll library. But we can see the arguments that the function takes. The second argument - `SourceString` looks interesting as it contains the whole command, We also can see that the function is used **a lot** of times, Basically every time the user gives input to the command prompt, So we need to build a filter mechanism in order to filter unwanted garbage.
 
 Final script should look like this:
 
@@ -478,17 +478,22 @@ The result would be:
 
 ![](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/cmdResukt.png)
 
-Great! we were able to intercept the credentials, You can expend the script to your personal needs or even combine all of them together, I'll leave it for you to explore ;).  
+Great! we were able to intercept the credentials.
 
 
 
 ## Conclusion 
 
+This was my first blog, hopefully, many more to come. I've learned a lot researching this topic. You can expand the scripts to your personal needs or even combine all of them together, I'll leave it for you to explore ;). 
+
+Feedback and additions or corrections are strongly encouraged. You can reach me via the above channels.
 
 
 
+## Links & Resources
 
-## Credits 
-
-
+* Instrumeting Windows APIs With Frida - https://www.ired.team/miscellaneous-reversing-forensics/windows-kernel-internals/instrumenting-windows-apis-with-frida
+* RdpThief - https://www.mdsec.co.uk/2019/11/rdpthief-extracting-clear-text-credentials-from-remote-desktop-clients/
+* Frida - https://frida.re/
+* Api Monitor - http://www.rohitab.com/apimonitor
 
