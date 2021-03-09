@@ -1,7 +1,7 @@
 ---
 title: Exploring Nim language - Writing a ransomware
 author: Ilan Kalendarov
-date: 2021-03-01 16:10:00 +0800
+date: 2021-03-09 14:10:00 +0800
 categories: [Red Team]
 tags: [ransomware, red team]
 
