@@ -76,7 +76,7 @@ for file in walkDirRec path: # For any file/folder inside our folder
 
 Lets try it ! 
 
-![1encrypt](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\Ransomware\1encrypt.gif)
+![1encrypt](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/Ransomware/1encrypt.gif)
 
 Great it works perfectly. Now, let's try to change the wallpaper. I did some searching and came by the above [API Call](https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-systemparametersinfow) from Microsoft - `SystemParametersInfoW`. According to the docs - 
 
@@ -167,7 +167,7 @@ Now, I'll compile the code with the above flags:
 
 And the result :
 
-![2encrypt](C:\Users\ilanka\Documents\GitHub\IlanKalendarov.github.io\Images\Ransomware\2encrypt.gif)
+![2encrypt](https://raw.githubusercontent.com/IlanKalendarov/IlanKalendarov.github.io/main/Images/Ransomware/2encrypt.gif)
 
 I'll let you figure out the decryption part :)
 
